@@ -126,6 +126,26 @@ button{font:inherit;color:inherit}
   transition:color .18s,border-color .18s,background .18s;
 }
 .reset:hover{color:var(--text);border-color:#2C3A4C}
+.burger{
+  flex:0 0 auto;
+  width:34px;height:32px;
+  display:grid;place-items:center;
+  padding:0;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  color:var(--text);
+  cursor:pointer;
+  transition:border-color .18s,background .18s;
+}
+.burger:hover{border-color:#2C3A4C;background:rgba(255,255,255,.05)}
+.burger span{
+  display:block;
+  width:15px;height:1.8px;
+  border-radius:2px;
+  background:currentColor;
+  box-shadow:0 -5px 0 currentColor, 0 5px 0 currentColor;
+}
 .icon{
   flex:0 0 auto;
   width:32px;height:30px;
@@ -411,6 +431,105 @@ button{font:inherit;color:inherit}
   transform:none;
 }
 
+/* ---------- game size: chooser and menu ---------- */
+.pick{
+  position:fixed;
+  inset:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));
+  background:rgba(5,8,12,.86);
+}
+.pick.menu{align-items:flex-end;padding:0}
+.pick-card{
+  width:100%;
+  max-width:360px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:20px;
+  padding:22px 18px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  box-shadow:0 30px 70px -24px rgba(0,0,0,.9);
+}
+.pick.menu .pick-card{
+  max-width:none;
+  border-radius:20px 20px 0 0;
+  border-left:0;border-right:0;border-bottom:0;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));
+}
+.pick-title{
+  font-family:'Archivo Black',Impact,sans-serif;
+  font-size:19px;
+  letter-spacing:.04em;
+  text-wrap:balance;
+}
+.pick-sub{
+  margin-top:-8px;
+  font-size:12px;
+  line-height:1.5;
+  color:var(--muted);
+}
+.sizes{display:flex;flex-direction:column;gap:9px}
+.size{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:13px 14px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+  transition:border-color .16s,background .16s;
+}
+.size:hover{border-color:#31435A;background:rgba(255,255,255,.05)}
+.size .n{
+  font-family:'Archivo Black',Impact,sans-serif;
+  font-size:23px;
+  line-height:1;
+  min-width:42px;
+  font-variant-numeric:tabular-nums;
+}
+.size .t{font-size:12px;font-weight:600;letter-spacing:.02em}
+.size .t small{
+  display:block;
+  font-weight:500;
+  letter-spacing:0;
+  color:var(--muted);
+  margin-top:2px;
+}
+.size .dots{margin-left:auto;display:flex;gap:3px}
+.size .dots i{width:6px;height:6px;border-radius:50%;background:var(--m)}
+.size.on{border-color:var(--brass);background:rgba(227,180,81,.09)}
+.size.on .n{color:var(--brass)}
+.pick-note{
+  font-size:11px;
+  line-height:1.5;
+  color:var(--dim);
+  text-align:center;
+}
+.pick-x{
+  align-self:center;
+  height:30px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:transparent;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.pick-x:hover{color:var(--text);border-color:#2C3A4C}
+
 /* ---------- reveal ---------- */
 .reveal{
   position:fixed;
@@ -545,8 +664,8 @@ button{font:inherit;color:inherit}
 
 <div class="app">
   <header class="bar">
-    <span class="mark" id="mark" aria-hidden="true"></span>
-    <span class="wordmark">Tombola&nbsp;<b>90</b></span>
+    <button class="burger" id="menuBtn" type="button" aria-label="Game size"><span></span></button>
+    <span class="wordmark">Tombola&nbsp;<b id="wordNum">90</b></span>
     <span class="spacer"></span>
     <span class="left"><b id="remaining">90</b>left</span>
     <button class="icon" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on">
@@ -588,6 +707,16 @@ button{font:inherit;color:inherit}
   </div>
 </div>
 
+<div class="pick" id="pick" hidden>
+  <div class="pick-card" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+    <div class="pick-title" id="pickTitle">Which game?</div>
+    <div class="pick-sub" id="pickSub">Pick how many balls are in the drum. Ten to a colour.</div>
+    <div class="sizes" id="sizes"></div>
+    <div class="pick-note" id="pickNote" hidden>Switching size returns every ball and starts a new run.</div>
+    <button class="pick-x" id="pickX" type="button" hidden>Close</button>
+  </div>
+</div>
+
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Every ball called">
     <div class="sheet-bar">
@@ -623,19 +752,43 @@ button{font:inherit;color:inherit}
 
 var TAU = Math.PI * 2;
 
-/* Nine decades, nine hues. Every ground is light enough to carry its own
+/* Nine hues, ten balls to each. Every ground is light enough to carry its own
    near-black ink, so the number reads the same way on every ball. */
-var DECADES = [
-  {from:1,  to:10, c:'#FF4136', i:'#2E0703'},
-  {from:11, to:20, c:'#FF8C1A', i:'#2B1500'},
-  {from:21, to:30, c:'#FFCE21', i:'#2B2100'},
-  {from:31, to:40, c:'#9BE24A', i:'#14260A'},
-  {from:41, to:50, c:'#16C97E', i:'#032417'},
-  {from:51, to:60, c:'#16C2D5', i:'#03232A'},
-  {from:61, to:70, c:'#4D8DFF', i:'#061B3D'},
-  {from:71, to:80, c:'#A67CFF', i:'#1C0C3D'},
-  {from:81, to:90, c:'#EC48B8', i:'#330729'}
+var HUES = [
+  {c:'#FF4136', i:'#2E0703'},
+  {c:'#FF8C1A', i:'#2B1500'},
+  {c:'#FFCE21', i:'#2B2100'},
+  {c:'#9BE24A', i:'#14260A'},
+  {c:'#16C97E', i:'#032417'},
+  {c:'#16C2D5', i:'#03232A'},
+  {c:'#4D8DFF', i:'#061B3D'},
+  {c:'#A67CFF', i:'#1C0C3D'},
+  {c:'#EC48B8', i:'#330729'}
 ];
+
+/* The three games. A short game just uses fewer hues; the last band of 45 is
+   half a decade, which the range labels show honestly as 41-45. */
+var SIZES = [
+  {n:30, name:'Speed',   blurb:'Three colours. A few minutes.'},
+  {n:45, name:'Short',   blurb:'Five colours. Half a house.'},
+  {n:90, name:'Full house', blurb:'All nine colours. The long game.'}
+];
+
+var MAX = 90;
+var DECADES = [];
+
+function buildDecades(max){
+  var out = [];
+  for (var i = 0; i * 10 < max; i++){
+    out.push({
+      from: i * 10 + 1,
+      to: Math.min(max, i * 10 + 10),
+      c: HUES[i].c,
+      i: HUES[i].i
+    });
+  }
+  return out;
+}
 
 /* The traditional calls. Index 0 is ball 1. */
 var CALLS = [
@@ -683,16 +836,30 @@ var pool = [];
 var called = [];
 
 var STORE = 'tombola90.v1';
+var STORE_SIZE = 'tombola90.size';
+
 function save(){
-  try { localStorage.setItem(STORE, JSON.stringify(called)); } catch(e){}
+  try { localStorage.setItem(STORE, JSON.stringify({n: MAX, called: called})); } catch(e){}
 }
 function load(){
   try {
     var raw = localStorage.getItem(STORE);
     if (!raw) return null;
-    var arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.filter(function(n){ return n >= 1 && n <= 90; }) : null;
+    var v = JSON.parse(raw);
+    if (Array.isArray(v)) v = {n: 90, called: v};      // pre-variant save format
+    if (!v || v.n !== MAX || !Array.isArray(v.called)) return null;
+    return v.called.filter(function(n){ return n >= 1 && n <= MAX; });
   } catch(e){ return null; }
+}
+function loadSize(){
+  try {
+    var v = parseInt(localStorage.getItem(STORE_SIZE), 10);
+    for (var i = 0; i < SIZES.length; i++) if (SIZES[i].n === v) return v;
+    return null;
+  } catch(e){ return null; }
+}
+function saveSize(){
+  try { localStorage.setItem(STORE_SIZE, String(MAX)); } catch(e){}
 }
 
 /* ---------------- dom ---------------- */
@@ -711,7 +878,14 @@ var rvNum     = document.getElementById('rvNum');
 var rvRange   = document.getElementById('rvRange');
 var rvCall    = document.getElementById('rvCall');
 var rvIndex   = document.getElementById('rvIndex');
-var markEl    = document.getElementById('mark');
+var menuBtn   = document.getElementById('menuBtn');
+var wordNum   = document.getElementById('wordNum');
+var pickEl    = document.getElementById('pick');
+var pickTitle = document.getElementById('pickTitle');
+var pickSub   = document.getElementById('pickSub');
+var pickNote  = document.getElementById('pickNote');
+var pickX     = document.getElementById('pickX');
+var sizesEl   = document.getElementById('sizes');
 var soundBtn  = document.getElementById('soundBtn');
 var confCv    = document.getElementById('confetti');
 var histBtn   = document.getElementById('histBtn');
@@ -721,12 +895,6 @@ var sheetCount= document.getElementById('sheetCount');
 var boardEl   = document.getElementById('board');
 var ordEl     = document.getElementById('ord');
 var cctx      = confCv.getContext('2d');
-
-for (var m = 0; m < 9; m++){
-  var dot = document.createElement('i');
-  dot.style.setProperty('--m', DECADES[m].c);
-  markEl.appendChild(dot);
-}
 
 /* ---------------- geometry ---------------- */
 var W = 0, H = 0, dpr = 1;
@@ -758,7 +926,9 @@ function layout(){
   rimW = Math.max(4, R * 0.075);
   cx = W / 2;
   cy = R * 1.19 + 4;
-  br = Math.max(4.2, R * 0.069);
+  // Keep the drum looking equally full whatever the game size: fewer balls
+  // means bigger ones, capped so the chute does not become a drainpipe.
+  br = Math.max(4.2, R * Math.min(0.098, Math.sqrt(0.428 / MAX)));
 
   P0 = {x: cx, y: cy + R * 0.94};
   var endY = H - br * 2.1 - 4;
@@ -867,7 +1037,7 @@ function clampBalls(){
 function physics(dt){
   if (dt < 0.1) dt = 0.1;             // never divide velocity by ~0 below
   var G = R * 0.0030;
-  var cap = R * 0.072;                // under one ball-width a frame: no blur, no tunnelling
+  var cap = br * 0.9;                 // under one ball-width a frame: no blur, no tunnelling
   var md = br * 2, md2 = md * md;
   var max = R - br - 2;
   var n = balls.length;
@@ -1198,11 +1368,13 @@ function restart(){
 
 /* ---------------- ui ---------------- */
 function renderDecades(){
-  var counts = [0,0,0,0,0,0,0,0,0];
-  for (var i = 0; i < pool.length; i++) counts[decOf(pool[i])]++;
+  var counts = [], i;
+  for (i = 0; i < DECADES.length; i++) counts.push(0);
+  for (i = 0; i < pool.length; i++) counts[decOf(pool[i])]++;
 
+  decadesEl.style.gridTemplateColumns = 'repeat(' + DECADES.length + ', 1fr)';
   var html = '';
-  for (var d = 0; d < 9; d++){
+  for (var d = 0; d < DECADES.length; d++){
     var dec = DECADES[d];
     html += '<div class="dec' + (counts[d] === 0 ? ' empty' : '') + '"' +
             ' style="--c:' + dec.c + ';--i:' + dec.i + '"' +
@@ -1237,7 +1409,7 @@ function renderBoard(){
   var seen = {}, i, h = '';
   for (i = 0; i < called.length; i++) seen[called[i]] = 1;
   var last = called[called.length - 1];
-  for (var d = 0; d < 9; d++){
+  for (var d = 0; d < DECADES.length; d++){
     var dec = DECADES[d];
     for (var k = dec.from; k <= dec.to; k++){
       h += '<span class="cell' + (seen[k] ? ' on' : '') + (k === last ? ' now' : '') +
@@ -1245,7 +1417,7 @@ function renderBoard(){
     }
   }
   boardEl.innerHTML = h;
-  sheetCount.textContent = called.length + ' of 90';
+  sheetCount.textContent = called.length + ' of ' + MAX;
 
   if (!called.length){
     ordEl.innerHTML = '<span class="none">Nothing called yet</span>';
@@ -1282,7 +1454,7 @@ function renderAll(){
   renderRecent();
   renderBoard();
   drawBtn.disabled = pool.length === 0;
-  drawBtn.textContent = pool.length === 0 ? 'All 90 called' : 'Draw ball';
+  drawBtn.textContent = pool.length === 0 ? 'All ' + MAX + ' called' : 'Draw ball';
 }
 
 /* ---------------- sound ---------------- */
@@ -1498,7 +1670,7 @@ function confettiStop(){
 var busy = false;
 
 function drawBall(){
-  if (busy || !pool.length) return;
+  if (busy || !pool.length || !pickEl.hidden) return;
   closeSheet();
   busy = true;
   drawBtn.disabled = true;
@@ -1554,7 +1726,7 @@ function openReveal(){
   rvBall.classList.toggle('u', n === 6 || n === 9);
   rvRange.textContent = dec.from + ' – ' + dec.to;
   rvCall.textContent = CALLS[n - 1];
-  rvIndex.textContent = 'Ball ' + called.length + ' of 90';
+  rvIndex.textContent = 'Ball ' + called.length + ' of ' + MAX;
   liveEl.textContent = 'Number ' + n + '. ' + CALLS[n - 1] + '. ' + dec.from + ' to ' + dec.to + '.';
 
   reveal.hidden = false;
@@ -1616,6 +1788,72 @@ function closeReveal(){
   drawBtn.focus({preventScroll: true});
 }
 
+/* ---------------- game size ---------------- */
+function renderSizes(){
+  var h = '';
+  for (var i = 0; i < SIZES.length; i++){
+    var sz = SIZES[i];
+    var dots = '';
+    for (var g = 0; g * 10 < sz.n; g++) dots += '<i style="--m:' + HUES[g].c + '"></i>';
+    h += '<button class="size' + (sz.n === MAX ? ' on' : '') + '" type="button"' +
+         ' data-n="' + sz.n + '"' + (sz.n === MAX ? ' aria-current="true"' : '') + '>' +
+           '<span class="n">' + sz.n + '</span>' +
+           '<span class="t">' + sz.name + '<small>' + sz.blurb + '</small></span>' +
+           '<span class="dots" aria-hidden="true">' + dots + '</span>' +
+         '</button>';
+  }
+  sizesEl.innerHTML = h;
+}
+
+function openPick(asMenu){
+  pickEl.classList.toggle('menu', !!asMenu);
+  pickTitle.textContent = asMenu ? 'Game size' : 'Which game?';
+  pickSub.textContent = asMenu
+    ? 'Ten balls to a colour.'
+    : 'How many balls go in the drum? Ten to a colour.';
+  pickNote.hidden = !asMenu;
+  pickX.hidden = !asMenu;
+  renderSizes();
+  pickEl.hidden = false;
+  var first = sizesEl.querySelector('.size');
+  if (first) first.focus({preventScroll: true});
+}
+
+function closePick(){
+  if (pickEl.hidden) return;
+  pickEl.hidden = true;
+  if (pickEl.classList.contains('menu')) menuBtn.focus({preventScroll: true});
+}
+
+function setSize(n){
+  MAX = n;
+  DECADES = buildDecades(n);
+  saveSize();
+  wordNum.textContent = n;
+  buildSprites();
+  layout();          // ball radius depends on the count
+  doReset();         // a different drum means a fresh run
+}
+
+sizesEl.addEventListener('click', function(e){
+  var el = e.target;
+  while (el && el !== sizesEl && !(el.className && String(el.className).indexOf('size') === 0)) el = el.parentNode;
+  if (!el || el === sizesEl) return;
+  var n = parseInt(el.getAttribute('data-n'), 10);
+  if (!n) return;
+  var wasMenu = pickEl.classList.contains('menu');
+  closePick();
+  // Re-picking the size you are already on would only throw the run away.
+  if (wasMenu && n === MAX) return;
+  setSize(n);
+});
+
+menuBtn.addEventListener('click', function(){ disarm(); closeSheet(); openPick(true); });
+pickX.addEventListener('click', closePick);
+pickEl.addEventListener('click', function(e){
+  if (e.target === pickEl && pickEl.classList.contains('menu')) closePick();
+});
+
 /* ---------------- reset ---------------- */
 var armTimer = 0;
 
@@ -1631,7 +1869,7 @@ function doReset(){
   confettiStop();
   if (!reveal.hidden) reveal.hidden = true;
   pool = [];
-  for (var n = 1; n <= 90; n++) pool.push(n);
+  for (var n = 1; n <= MAX; n++) pool.push(n);
   called = [];
   save();
   spawn();
@@ -1642,7 +1880,7 @@ function doReset(){
   pendingReveal = false;
   busy = false;
   renderAll();
-  liveEl.textContent = 'All 90 balls returned to the drum.';
+  liveEl.textContent = 'All ' + MAX + ' balls returned to the drum.';
   wake();
 }
 
@@ -1660,13 +1898,14 @@ reveal.addEventListener('click', closeReveal);
 window.addEventListener('keydown', function(e){
   if (e.key === 'Escape'){
     if (!reveal.hidden) closeReveal();
+    else if (!pickEl.hidden) closePick();   // no-op on the first-run chooser
     else if (!sheet.hidden) closeSheet();
     else disarm();
     return;
   }
   if (e.key === ' ' || e.key === 'Enter'){
     if (!reveal.hidden){ e.preventDefault(); closeReveal(); }
-    else if (!sheet.hidden){ /* let the sheet's own buttons handle it */ }
+    else if (!sheet.hidden || !pickEl.hidden){ /* their own buttons handle it */ }
     else if (document.activeElement !== resetBtn && !busy){ e.preventDefault(); drawBall(); }
   }
 });
@@ -1685,6 +1924,12 @@ window.addEventListener('focus', restart);
 
 /* ---------------- boot ---------------- */
 function boot(data){
+  var stored = loadSize();
+  var firstRun = (stored === null);
+  MAX = stored || 90;
+  DECADES = buildDecades(MAX);
+  wordNum.textContent = MAX;
+
   var restored = (data && Array.isArray(data.called)) ? data.called : load();
   called = restored || [];
   var seen = {};
@@ -1693,12 +1938,14 @@ function boot(data){
     seen[n] = 1; return true;
   });
   pool = [];
-  for (var n = 1; n <= 90; n++) if (!seen[n]) pool.push(n);
+  for (var n = 1; n <= MAX; n++) if (!seen[n]) pool.push(n);
 
   layout();
   spawn();
   renderAll();
   wake();
+
+  if (firstRun) openPick(false);
 }
 
 if (window.claude && window.claude.hot && window.claude.hot.snapshot){

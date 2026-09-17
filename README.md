@@ -13,10 +13,24 @@ their colour, plus the sequence in call order. The game is kept in
 `localStorage`, so a refresh mid-session does not lose the calls. Reset (top
 right) asks once before returning all 90 to the drum.
 
+## Game sizes
+
+Three games, chosen on first open and switchable from the burger menu top
+left. Switching returns every ball and starts a new run; re-picking the size
+you are already on just closes the menu rather than throwing the run away.
+
+| Balls | Colours | |
+|---|---|---|
+| 30 | 3 | Speed - a few minutes |
+| 45 | 5 | Short - last band is 41-45 |
+| 90 | 9 | Full house |
+
+Ball radius scales with the count (`sqrt(0.428 / MAX)`, capped at `0.098 R`)
+so the drum reads equally full at any size.
+
 ## Colours
 
-Ten balls per colour, nine decades, each ringing one step further up a major
-pentatonic:
+Ten balls per colour, each ringing one step further up a major pentatonic:
 
 | 1–10 | 11–20 | 21–30 | 31–40 | 41–50 | 51–60 | 61–70 | 71–80 | 81–90 |
 |---|---|---|---|---|---|---|---|---|
