@@ -15,9 +15,9 @@ right) asks once before returning all 90 to the drum.
 
 ## Game sizes
 
-Three games, chosen on first open and switchable from the burger menu top
-left. Switching returns every ball and starts a new run; re-picking the size
-you are already on just closes the menu rather than throwing the run away.
+Ninety by default; switch from the burger menu top left. Switching returns
+every ball and starts a new run; re-picking the size you are already on just
+closes the menu rather than throwing the run away.
 
 | Balls | Colours | |
 |---|---|---|
@@ -83,6 +83,12 @@ the generated file, so a source change that is not rebuilt will not ship.
   off a frame firing.
 - **`prefers-reduced-motion`** shortens the sequence and skips the confetti.
   The sound still plays.
+- **The spiral is a helix wrapped on the sphere.** `travelAt(t)` returns a
+  `z` depth from the orbit angle, and that sign decides whether a stretch of
+  tube - and the ball on it - is painted before or after the drum. That split
+  is what makes it read as going *around* the container. `TILT` bows each turn
+  into an ellipse; without it every turn projects to a flat horizontal line
+  and the coil looks like stacked bands.
 - **The drum uses position-based dynamics**: predict, solve contacts as pure
   position constraints, then read velocity back off the positions the solver
   allowed. A resting contact therefore yields zero velocity by construction,

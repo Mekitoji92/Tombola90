@@ -556,7 +556,7 @@ button{font:inherit;color:inherit}
   font-variant-numeric:tabular-nums;
 }
 .rv-ball{
-  --d:min(92vw, 60vh);
+  --d:min(70vw, 44vh);
   position:relative;
   z-index:2;
   width:var(--d);
@@ -638,7 +638,7 @@ button{font:inherit;color:inherit}
   .panel{width:min(48%,380px);justify-content:flex-end}
   .recent{height:44px}
   .draw{height:52px;font-size:15px}
-  .rv-ball{--d:min(60vw, 66vh)}
+  .rv-ball{--d:min(46vw, 62vh)}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -692,13 +692,13 @@ button{font:inherit;color:inherit}
   </div>
 </div>
 
-<div class="pick" id="pick" hidden>
+<div class="pick menu" id="pick" hidden>
   <div class="pick-card" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
-    <div class="pick-title" id="pickTitle">Which game?</div>
-    <div class="pick-sub" id="pickSub">Pick how many balls are in the drum. Ten to a colour.</div>
+    <div class="pick-title" id="pickTitle">Game size</div>
+    <div class="pick-sub">Ten balls to a colour.</div>
     <div class="sizes" id="sizes"></div>
-    <div class="pick-note" id="pickNote" hidden>Switching size returns every ball and starts a new run.</div>
-    <button class="pick-x" id="pickX" type="button" hidden>Close</button>
+    <div class="pick-note">Switching size returns every ball and starts a new run.</div>
+    <button class="pick-x" id="pickX" type="button">Close</button>
   </div>
 </div>
 
@@ -799,8 +799,8 @@ var CALLS = [
 
 var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var T = REDUCED
-  ? {blow:220, eject:200, chute:280, pause:60}
-  : {blow:1150, eject:560, chute:950, pause:180};
+  ? {blow:220, eject:200, chute:320, pause:60}
+  : {blow:950, eject:600, chute:1900, pause:160};
 
 /* ---------------- colour helpers ---------------- */
 function rgb(hex){
@@ -866,9 +866,6 @@ var rvIndex   = document.getElementById('rvIndex');
 var menuBtn   = document.getElementById('menuBtn');
 var wordNum   = document.getElementById('wordNum');
 var pickEl    = document.getElementById('pick');
-var pickTitle = document.getElementById('pickTitle');
-var pickSub   = document.getElementById('pickSub');
-var pickNote  = document.getElementById('pickNote');
 var pickX     = document.getElementById('pickX');
 var sizesEl   = document.getElementById('sizes');
 var soundBtn  = document.getElementById('soundBtn');
@@ -884,15 +881,28 @@ var cctx      = confCv.getContext('2d');
 /* ---------------- geometry ---------------- */
 var W = 0, H = 0, dpr = 1;
 var cx = 0, cy = 0, R = 120, br = 9, rimW = 8;
-var P0, C1, C2, P3, pathPts = [], pathLen = [], pathTotal = 1;
+var sR = 130, cupY = 0;          // spiral radius, and where the ball lands
+var spiralPts = [];
 var sprites = [];
 
-function bez(t){
-  var u = 1 - t;
-  var a = u*u*u, b = 3*u*u*t, c = 3*u*t*t, d = t*t*t;
+var TURNS = 3;                   // orbits of the drum on the way down
+var TILT = 0.26;                 // how far above the coil the eye sits
+
+/* A helix wrapped on the sphere. t: 0 at the top port, 1 at the cup.
+   z is the depth: positive in front of the drum, negative behind it. */
+function travelAt(t){
+  t = t < 0 ? 0 : (t > 1 ? 1 : t);
+  var phi = Math.PI * t;
+  var ring = Math.pow(Math.sin(phi), 0.6) * sR;   // stays wide, pinches only at the ends
+  var th = Math.PI / 2 + TURNS * TAU * t;
+  var z = Math.sin(th);
   return {
-    x: a*P0.x + b*C1.x + c*C2.x + d*P3.x,
-    y: a*P0.y + b*C1.y + c*C2.y + d*P3.y
+    x: cx + Math.cos(th) * ring,
+    // Viewed dead-on, every turn of a coil projects to a flat line. TILT is
+    // the eye sitting a little above it, which bows each turn into an ellipse
+    // - the near side dipping low, the far side riding high.
+    y: cy - Math.cos(phi) * sR + TILT * z * ring,
+    z: z
   };
 }
 
@@ -904,47 +914,32 @@ function layout(){
   canvas.width  = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);
 
-  // cy leaves room above the sphere for the rim and the blower cap.
-  var chuteZone = Math.max(Math.min(H * 0.32, 180), 76);
-  R = Math.min(W * 0.452, (H - chuteZone - 6) / 2.28);
-  R = Math.max(R, 50);
+  // Fewer balls means bigger ones, so the drum reads equally full at any size.
+  var brf = Math.min(0.098, Math.sqrt(0.428 / MAX));
+  // Everything scales off R: the rim, the balls, and the spiral riding just
+  // outside the rim. kOuter is the drum's full extent including that tube.
+  var kOuter = 1.041 + 1.65 * brf;
+  R = Math.min((W / 2 - 4) / kOuter, (H - 18) / (2 * kOuter + 0.083));
+  R = Math.max(R, 46);
   rimW = Math.max(4, R * 0.075);
+  br = Math.max(4.2, R * brf);
+
+  sR = R + rimW * 0.55 + br * 0.35;
+  var tubeHalf = br * 1.3;
   cx = W / 2;
-  cy = R * 1.19 + 4;
-  // Keep the drum looking equally full whatever the game size: fewer balls
-  // means bigger ones, capped so the chute does not become a drainpipe.
-  br = Math.max(4.2, R * Math.min(0.098, Math.sqrt(0.428 / MAX)));
+  var machineH = 2 * (sR + tubeHalf) + br * 1.6;
+  tubeHalf += sR * 0.04;
+  cy = Math.max(sR + tubeHalf + 4, (H - machineH) / 2 + sR + tubeHalf);
+  cupY = cy + sR + br * 0.9;
 
-  P0 = {x: cx, y: cy + R * 0.94};
-  var endY = H - br * 2.1 - 4;
-  var dy = Math.max(46, endY - P0.y);
-  var amp = Math.min(W * 0.30, dy * 0.82);
-  C1 = {x: cx - amp, y: P0.y + dy * 0.34};
-  C2 = {x: cx + amp, y: P0.y + dy * 0.70};
-  P3 = {x: cx, y: P0.y + dy};
-
-  pathPts = [];
-  for (var i = 0; i <= 200; i++) pathPts.push(bez(i / 200));
-  pathLen = [0];
-  for (var j = 1; j < pathPts.length; j++){
-    pathLen.push(pathLen[j-1] + Math.hypot(pathPts[j].x - pathPts[j-1].x, pathPts[j].y - pathPts[j-1].y));
-  }
-  pathTotal = pathLen[pathLen.length - 1] || 1;
+  spiralPts = [];
+  for (var i = 0; i <= 340; i++) spiralPts.push(travelAt(i / 340));
 
   buildSprites();
   clampBalls();
   wake();
 }
 
-function pointAt(u){
-  var target = Math.max(0, Math.min(1, u)) * pathTotal;
-  var lo = 0, hi = pathLen.length - 1;
-  while (lo < hi){
-    var mid = (lo + hi) >> 1;
-    if (pathLen[mid] < target) lo = mid + 1; else hi = mid;
-  }
-  return pathPts[lo];
-}
 
 /* Pre-rendered ball sprites — nine gradients drawn once, not 90 per frame. */
 function buildSprites(){
@@ -976,7 +971,6 @@ var phase = 'idle';          // idle | blow | eject | chute
 var chosen = null;
 var chuteT = 0;
 var pendingReveal = false;
-var gateAngle = 0;
 var sleepFrames = 0;
 var rafId = 0;
 var lastTs = 0;
@@ -1109,9 +1103,10 @@ function step(dt, now){
     if (phase === 'blow' && e >= T.blow) beginEject();
     if (phase === 'eject'){
       var t = Math.min(1, (e - T.blow) / T.eject);
-      var p = t * t * (3 - 2 * t);
-      chosen.x = seq.fx + (P0.x - seq.fx) * p;
-      chosen.y = seq.fy + (P0.y - seq.fy) * p;
+      var p = t * t;                       // suction: hesitates, then yanks
+      var port = travelAt(0);
+      chosen.x = seq.fx + (port.x - seq.fx) * p;
+      chosen.y = seq.fy + (port.y - seq.fy) * p;
       if (t >= 1) beginChute();
     }
     if (phase === 'chute'){
@@ -1135,9 +1130,6 @@ function step(dt, now){
   }
 
   physics(dt);
-
-  var gateTarget = (phase === 'eject' || phase === 'chute') ? -1.15 : 0;
-  gateAngle += (gateTarget - gateAngle) * Math.min(1, 0.18 * dt);
 }
 
 /* ---------------- drawing ---------------- */
@@ -1166,45 +1158,56 @@ function drawSprite(x, y, r, d){
   if (s) ctx.drawImage(s, x - r, y - r, r * 2, r * 2);
 }
 
-function tubePath(){
-  ctx.beginPath();
-  ctx.moveTo(P0.x, P0.y);
-  ctx.bezierCurveTo(C1.x, C1.y, C2.x, C2.y, P3.x, P3.y);
-}
 
-function drawTube(){
-  var bore = br * 3.1;
+/* The spiral is stroked in two passes: the stretches running behind the drum
+   are laid down first and the drum paints over them, the stretches in front
+   go on afterwards. */
+function drawSpiral(front){
+  var bore = br * 2.2;
+  var runs = [], cur = null, i;
+  for (i = 0; i < spiralPts.length; i++){
+    var pt = spiralPts[i];
+    if ((pt.z >= 0) === front){
+      if (!cur){ cur = [pt]; runs.push(cur); }
+      else cur.push(pt);
+    } else {
+      cur = null;
+    }
+  }
+  if (!runs.length) return;
+
+  var layers = front
+    ? [[bore + 9,     'rgba(227,180,81,0.07)'],
+       [bore + 3.5,   'rgba(198,220,250,0.26)'],
+       [bore,         'rgba(8,12,18,0.42)'],
+       [bore * 0.78,  'rgba(255,255,255,0.035)']]
+    : [[bore + 3.5,   'rgba(150,175,205,0.07)'],
+       [bore,         'rgba(9,13,19,0.6)']];
+
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-
-  tubePath();
-  ctx.lineWidth = bore + 12; ctx.strokeStyle = 'rgba(227,180,81,0.07)'; ctx.stroke();
-  tubePath();
-  ctx.lineWidth = bore + 4.5; ctx.strokeStyle = 'rgba(190,214,245,0.17)'; ctx.stroke();
-  tubePath();
-  ctx.lineWidth = bore; ctx.strokeStyle = '#080C12'; ctx.stroke();
-  tubePath();
-  ctx.lineWidth = bore * 0.8; ctx.strokeStyle = 'rgba(255,255,255,0.028)'; ctx.stroke();
-
-  // spout collar
-  ctx.save();
-  ctx.translate(P3.x, P3.y);
-  ctx.beginPath();
-  ctx.arc(0, 0, bore * 0.5 + 2, 0, TAU);
-  ctx.lineWidth = 3.5;
-  ctx.strokeStyle = brassGradient(-bore, -bore, bore, bore);
-  ctx.stroke();
-  ctx.restore();
+  for (var L = 0; L < layers.length; L++){
+    ctx.lineWidth = layers[L][0];
+    ctx.strokeStyle = layers[L][1];
+    ctx.beginPath();
+    for (var r = 0; r < runs.length; r++){
+      var run = runs[r];
+      ctx.moveTo(run[0].x, run[0].y);
+      for (var k = 1; k < run.length; k++) ctx.lineTo(run[k].x, run[k].y);
+    }
+    ctx.stroke();
+  }
 }
 
-function drawDrum(){
-  // ambient halo
-  var halo = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R * 1.65);
+function drawGlow(){
+  var halo = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R * 1.75);
   halo.addColorStop(0, 'rgba(227,180,81,0.10)');
   halo.addColorStop(1, 'rgba(227,180,81,0)');
   ctx.fillStyle = halo;
-  ctx.fillRect(cx - R * 1.7, cy - R * 1.7, R * 3.4, R * 3.4);
+  ctx.fillRect(cx - R * 1.8, cy - R * 1.8, R * 3.6, R * 3.6);
+}
 
+function drawDrum(){
   // glass body
   ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU);
   ctx.fillStyle = '#080C12'; ctx.fill();
@@ -1258,68 +1261,61 @@ function drawDrum(){
   ctx.fillStyle = '#fff'; ctx.fill();
   ctx.restore();
 
-  // blower cap on top
+}
+
+/* The suction port sits over the top of the glass; the cup catches the ball
+   where the spiral runs out at the bottom. */
+function drawPort(){
+  var w = Math.max(br * 2.6, R * 0.2);
+  var h = Math.max(br * 1.2, R * 0.1);
+  var top = cy - R - rimW * 0.5 - h;
   ctx.save();
-  ctx.fillStyle = brassGradient(cx - R * 0.2, cy - R - rimW, cx + R * 0.2, cy - R);
-  roundRect(cx - R * 0.17, cy - R - rimW * 1.5 - R * 0.07, R * 0.34, R * 0.13, R * 0.045);
+  ctx.fillStyle = brassGradient(cx - w, top, cx + w, top + h);
+  roundRect(cx - w * 0.5, top, w, h, h * 0.36);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.42)';
+  roundRect(cx - w * 0.28, top + h * 0.26, w * 0.56, h * 0.48, h * 0.2);
   ctx.fill();
   ctx.restore();
 }
 
-function drawNeck(){
-  var bore = br * 3.1;
+function drawCup(){
+  var w = br * 2.5;
   ctx.save();
-  ctx.translate(cx, cy + R * 0.9);
-
-  // collar
-  ctx.fillStyle = brassGradient(-bore, 0, bore, 0);
-  roundRect(-bore * 0.62, -R * 0.03, bore * 1.24, R * 0.13, R * 0.035);
-  ctx.fill();
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  roundRect(-bore * 0.45, -R * 0.01, bore * 0.9, R * 0.07, R * 0.02);
-  ctx.fill();
-
-  // gate
-  ctx.save();
-  ctx.translate(-bore * 0.46, R * 0.09);
-  ctx.rotate(gateAngle);
-  ctx.fillStyle = brassGradient(0, 0, bore, 0);
-  roundRect(0, 0, bore * 0.92, Math.max(3, R * 0.035), R * 0.018);
-  ctx.fill();
-  ctx.restore();
-
+  ctx.beginPath();
+  ctx.arc(cx, cupY, w, Math.PI * 0.08, Math.PI * 0.92);
+  ctx.lineWidth = Math.max(3, br * 0.4);
+  ctx.strokeStyle = brassGradient(cx - w, cupY, cx + w, cupY);
+  ctx.lineCap = 'round';
+  ctx.stroke();
   ctx.restore();
 }
 
-function drawChuteBall(){
+function drawTravelBall(front){
   if (phase !== 'chute' || !chosen) return;
-  var t = chuteT;
-  var u = t * t * (3 - 2 * t);
-  var p = pointAt(u);
-  var q = pointAt(Math.min(1, u + 0.01));
-  var ang = Math.atan2(q.y - p.y, q.x - p.x);
-  var wob = REDUCED ? 0 : Math.sin(t * 11) * br * 0.18 * (1 - t);
-  var x = p.x + Math.cos(ang + Math.PI / 2) * wob;
-  var y = p.y + Math.sin(ang + Math.PI / 2) * wob;
-  var k = br * (1 + 0.55 * t);
-
+  var pt = travelAt(chuteT);
+  if ((pt.z >= 0) !== front) return;
+  var k = br * (1 + 0.22 * pt.z);     // nearer the viewer reads a touch bigger
   ctx.save();
   ctx.shadowColor = rgba(DECADES[chosen.d].c, 0.9);
   ctx.shadowBlur = k * 2.2;
-  drawSprite(x, y, k, chosen.d);
+  drawSprite(pt.x, pt.y, k, chosen.d);
   ctx.restore();
-
-  chosen.sx = x; chosen.sy = y; chosen.sr = k;
+  chosen.sx = pt.x; chosen.sy = pt.y; chosen.sr = k;
 }
 
 function render(){
   if (!W || !H) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  drawTube();
+  drawGlow();
+  drawSpiral(false);          // the half of the coil running behind the drum
+  drawTravelBall(false);
   drawDrum();
-  drawNeck();
-  drawChuteBall();
+  drawPort();
+  drawSpiral(true);           // and the half passing in front of it
+  drawTravelBall(true);
+  drawCup();
 }
 
 /* ---------------- loop ---------------- */
@@ -1724,8 +1720,8 @@ function openReveal(){
   if (!REDUCED){
     var sRect = stage.getBoundingClientRect();
     var bRect = rvBall.getBoundingClientRect();
-    var fromX = sRect.left + (chosen.sx != null ? chosen.sx : P3.x);
-    var fromY = sRect.top + (chosen.sy != null ? chosen.sy : P3.y);
+    var fromX = sRect.left + (chosen.sx != null ? chosen.sx : cx);
+    var fromY = sRect.top + (chosen.sy != null ? chosen.sy : cupY);
     var toX = bRect.left + bRect.width / 2;
     var toY = bRect.top + bRect.height / 2;
     var scale = Math.max(0.02, ((chosen.sr != null ? chosen.sr : br * 1.55) * 2) / bRect.width);
@@ -1790,14 +1786,7 @@ function renderSizes(){
   sizesEl.innerHTML = h;
 }
 
-function openPick(asMenu){
-  pickEl.classList.toggle('menu', !!asMenu);
-  pickTitle.textContent = asMenu ? 'Game size' : 'Which game?';
-  pickSub.textContent = asMenu
-    ? 'Ten balls to a colour.'
-    : 'How many balls go in the drum? Ten to a colour.';
-  pickNote.hidden = !asMenu;
-  pickX.hidden = !asMenu;
+function openPick(){
   renderSizes();
   pickEl.hidden = false;
   var first = sizesEl.querySelector('.size');
@@ -1807,7 +1796,7 @@ function openPick(asMenu){
 function closePick(){
   if (pickEl.hidden) return;
   pickEl.hidden = true;
-  if (pickEl.classList.contains('menu')) menuBtn.focus({preventScroll: true});
+  menuBtn.focus({preventScroll: true});
 }
 
 function setSize(n){
@@ -1826,17 +1815,17 @@ sizesEl.addEventListener('click', function(e){
   if (!el || el === sizesEl) return;
   var n = parseInt(el.getAttribute('data-n'), 10);
   if (!n) return;
-  var wasMenu = pickEl.classList.contains('menu');
+  var same = (n === MAX);
   closePick();
   // Re-picking the size you are already on would only throw the run away.
-  if (wasMenu && n === MAX) return;
+  if (same) return;
   setSize(n);
 });
 
-menuBtn.addEventListener('click', function(){ disarm(); closeSheet(); openPick(true); });
+menuBtn.addEventListener('click', function(){ disarm(); closeSheet(); openPick(); });
 pickX.addEventListener('click', closePick);
 pickEl.addEventListener('click', function(e){
-  if (e.target === pickEl && pickEl.classList.contains('menu')) closePick();
+  if (e.target === pickEl) closePick();
 });
 
 /* ---------------- reset ---------------- */
@@ -1883,7 +1872,7 @@ reveal.addEventListener('click', closeReveal);
 window.addEventListener('keydown', function(e){
   if (e.key === 'Escape'){
     if (!reveal.hidden) closeReveal();
-    else if (!pickEl.hidden) closePick();   // no-op on the first-run chooser
+    else if (!pickEl.hidden) closePick();
     else if (!sheet.hidden) closeSheet();
     else disarm();
     return;
@@ -1909,9 +1898,7 @@ window.addEventListener('focus', restart);
 
 /* ---------------- boot ---------------- */
 function boot(data){
-  var stored = loadSize();
-  var firstRun = (stored === null);
-  MAX = stored || 90;
+  MAX = loadSize() || 90;             // full house unless they picked otherwise
   DECADES = buildDecades(MAX);
   wordNum.textContent = MAX;
 
@@ -1929,8 +1916,6 @@ function boot(data){
   spawn();
   renderAll();
   wake();
-
-  if (firstRun) openPick(false);
 }
 
 if (window.claude && window.claude.hot && window.claude.hot.snapshot){
