@@ -13,14 +13,14 @@ body{margin:0;font:14px system-ui,sans-serif;background:#070A0F}
 img{max-width:100%}
 [hidden]{display:none!important}
 </style>
-<title>Tombola Ninety</title>
+<title>Tombola Nouăzeci</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,500;1,9..144,600&display=swap">
 
 <style>
 /* ---------------------------------------------------------------
-   Tombola Ninety — a 90-ball blower.
+   Tombola Nouăzeci — o urnă cu bile de 30 / 45 / 90.
    Single committed visual world: a machine in a dark hall.
    No light theme by design; every colour is painted explicitly.
    --------------------------------------------------------------- */
@@ -75,8 +75,13 @@ button{font:inherit;color:inherit}
 .bar{
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:7px;
   flex:0 0 auto;
+}
+/* Below this the Romanian label no longer fits beside the controls, so the
+   count keeps the number and drops the word. */
+@media (max-width:367px){
+  .left .lbl{display:none}
 }
 .mark{
   display:grid;
@@ -88,16 +93,16 @@ button{font:inherit;color:inherit}
 .mark i{display:block;width:4px;height:4px;border-radius:50%;background:var(--m)}
 .wordmark{
   font-family:'Archivo Black',Impact,sans-serif;
-  font-size:13px;
-  letter-spacing:.13em;
+  font-size:12px;
+  letter-spacing:.06em;
   line-height:1;
   text-transform:uppercase;
 }
 .wordmark b{color:var(--brass);font-weight:inherit}
 .bar .spacer{flex:1}
 .left{
-  font-size:11px;
-  letter-spacing:.09em;
+  font-size:10px;
+  letter-spacing:.07em;
   text-transform:uppercase;
   color:var(--muted);
   white-space:nowrap;
@@ -108,12 +113,13 @@ button{font:inherit;color:inherit}
   color:var(--text);
   font-size:13px;
   font-weight:inherit;
-  margin-right:3px;
+  margin-right:4px;
 }
+.left .lbl{letter-spacing:.04em}
 .reset{
   flex:0 0 auto;
   height:30px;
-  padding:0 12px;
+  padding:0 10px;
   border-radius:999px;
   border:1px solid var(--line);
   background:rgba(255,255,255,.02);
@@ -148,7 +154,7 @@ button{font:inherit;color:inherit}
 }
 .icon{
   flex:0 0 auto;
-  width:32px;height:30px;
+  width:30px;height:30px;
   display:grid;place-items:center;
   padding:0;
   border-radius:999px;
@@ -664,11 +670,11 @@ button{font:inherit;color:inherit}
 
 <div class="app">
   <header class="bar">
-    <button class="burger" id="menuBtn" type="button" aria-label="Game size"><span></span></button>
-    <span class="wordmark">Tombola&nbsp;<b id="wordNum">90</b></span>
+    <button class="burger" id="menuBtn" type="button" aria-label="Mărimea jocului"><span></span></button>
+    <span class="wordmark">Tombolă&nbsp;<b id="wordNum">90</b></span>
     <span class="spacer"></span>
-    <span class="left"><b id="remaining">90</b>left</span>
-    <button class="icon" id="soundBtn" type="button" aria-pressed="true" aria-label="Sound on">
+    <span class="left"><b id="remaining">90</b><span class="lbl">rămase</span></span>
+    <button class="icon" id="soundBtn" type="button" aria-pressed="true" aria-label="Sunet pornit">
       <svg viewBox="0 0 20 20" aria-hidden="true">
         <path class="cone" d="M4 7.6h2.7L10.6 4.1v11.8L6.7 12.4H4z"/>
         <path class="wv" d="M13.3 7.5a3.5 3.5 0 0 1 0 5"/>
@@ -676,7 +682,7 @@ button{font:inherit;color:inherit}
         <path class="mute" d="M13.4 7.7l4.3 4.6M17.7 7.7l-4.3 4.6"/>
       </svg>
     </button>
-    <button class="reset" id="resetBtn" type="button">Reset</button>
+    <button class="reset" id="resetBtn" type="button">Joc nou</button>
   </header>
 
   <div class="body">
@@ -687,7 +693,7 @@ button{font:inherit;color:inherit}
     <div class="panel">
       <div class="decades" id="decades"></div>
       <div class="strip">
-        <button class="hist" id="histBtn" type="button" aria-label="Show every ball called">
+        <button class="hist" id="histBtn" type="button" aria-label="Arată toate bilele extrase">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <rect x="2" y="2" width="5" height="5" rx="1.4"/>
             <rect x="7.5" y="2" width="5" height="5" rx="1.4"/>
@@ -702,32 +708,32 @@ button{font:inherit;color:inherit}
         </button>
         <div class="recent" id="recent"></div>
       </div>
-      <button class="draw" id="drawBtn" type="button">Draw ball</button>
+      <button class="draw" id="drawBtn" type="button">Extrage bila</button>
     </div>
   </div>
 </div>
 
 <div class="pick menu" id="pick" hidden>
   <div class="pick-card" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
-    <div class="pick-title" id="pickTitle">Game size</div>
-    <div class="pick-sub">Ten balls to a colour.</div>
+    <div class="pick-title" id="pickTitle">Mărimea jocului</div>
+    <div class="pick-sub">Câte zece bile de fiecare culoare.</div>
     <div class="sizes" id="sizes"></div>
-    <div class="pick-note">Switching size returns every ball and starts a new run.</div>
-    <button class="pick-x" id="pickX" type="button">Close</button>
+    <div class="pick-note">Schimbarea mărimii readuce toate bilele și începe un joc nou.</div>
+    <button class="pick-x" id="pickX" type="button">Închide</button>
   </div>
 </div>
 
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Every ball called">
     <div class="sheet-bar">
-      <span class="sheet-title">Called</span>
-      <span class="sheet-count" id="sheetCount">0 of 90</span>
+      <span class="sheet-title">Extrase</span>
+      <span class="sheet-count" id="sheetCount">0 din 90</span>
       <span class="spacer"></span>
-      <button class="sheet-x" id="sheetX" type="button">Close</button>
+      <button class="sheet-x" id="sheetX" type="button">Închide</button>
     </div>
     <div class="board" id="board"></div>
     <div>
-      <div class="ord-label">In call order, newest first</div>
+      <div class="ord-label">În ordinea extragerii, ultima întâi</div>
       <div class="ord" id="ord"></div>
     </div>
   </div>
@@ -735,12 +741,12 @@ button{font:inherit;color:inherit}
 
 <div class="reveal" id="reveal" hidden>
   <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
-  <div class="rv-top" id="rvIndex">Ball 1 of 90</div>
+  <div class="rv-top" id="rvIndex">Bila 1 din 90</div>
   <div class="rv-ball" id="rvBall"><span id="rvNum">7</span></div>
   <div class="rv-foot">
     <div class="rv-range" id="rvRange">1 – 10</div>
-    <div class="rv-call" id="rvCall">Lucky seven</div>
-    <div class="rv-hint">Tap anywhere to continue</div>
+    <div class="rv-call" id="rvCall">O cană plină de lapte!</div>
+    <div class="rv-hint">Atinge oriunde pentru a continua</div>
   </div>
 </div>
 
@@ -769,9 +775,9 @@ var HUES = [
 /* The three games. A short game just uses fewer hues; the last band of 45 is
    half a decade, which the range labels show honestly as 41-45. */
 var SIZES = [
-  {n:30, name:'Speed',   blurb:'Three colours. A few minutes.'},
-  {n:45, name:'Short',   blurb:'Five colours. Half a house.'},
-  {n:90, name:'Full house', blurb:'All nine colours. The long game.'}
+  {n:30, name:'Rapid',       blurb:'Trei culori. Câteva minute.'},
+  {n:45, name:'Scurt',       blurb:'Cinci culori. Jumătate de partidă.'},
+  {n:90, name:'Joc complet', blurb:'Toate cele nouă culori. Partida lungă.'}
 ];
 
 var MAX = 90;
@@ -790,27 +796,22 @@ function buildDecades(max){
   return out;
 }
 
-/* The traditional calls. Index 0 is ball 1. */
-var CALLS = [
-  "Kelly's eye","One little duck","Cup of tea","Knock at the door","Man alive",
-  "Half a dozen","Lucky seven","Garden gate","Doctor's orders","Downing Street",
-  "Legs eleven","One dozen","Unlucky for some","Valentine's Day","Young and keen",
-  "Sweet sixteen","Dancing queen","Coming of age","Goodbye teens","One score",
-  "Key of the door","Two little ducks","Thee and me","Two dozen","Duck and dive",
-  "Half a crown","Gateway to heaven","In a state","Rise and shine","Dirty Gertie",
-  "Get up and run","Buckle my shoe","All the threes","Ask for more","Jump and jive",
-  "Three dozen","More than eleven","Christmas cake","Those famous steps","Life begins",
-  "Time for fun","Winnie the Pooh","Down on your knees","Droopy drawers","Halfway there",
-  "Up to tricks","Four and seven","Four dozen","Nick nick","Half a century",
-  "Tweak of the thumb","Danny La Rue","Stuck in the tree","Clean the floor","Snakes alive",
-  "Was she worth it?","Heinz varieties","Make them wait","Brighton line","Five dozen",
-  "Baker's bun","Tickety-boo","Tickle me","Almost retired","Retirement age",
-  "Clickety click","Stairway to heaven","Saving grace","Either way up","Three score and ten",
-  "Bang on the drum","Six dozen","Queen bee","Hit the floor","Strive and strive",
-  "Trombones","Two little crutches","Heaven's gate","One more time","Gandhi's breakfast",
-  "Stop and run","Straight on through","Time for tea","Seven dozen","Staying alive",
-  "Between the sticks","Torquay in Devon","Two fat ladies","Nearly there","Top of the shop"
+/* The caller's line, chosen by the ball's last digit: 7, 17, 27 and so on
+   all get the same one. Index 0 is for numbers ending in 0. */
+var MESAJE = [
+  "Un mare sombrero!",
+  "Ascundeți magiunu'!",
+  "Ați extras un mic trifoi!",
+  "Povestea pietrei!",
+  "Jucat ca la teatru!",
+  "Feriți-mă de budinci!",
+  "Ne plac clătitele grase!",
+  "O cană plină de lapte!",
+  "Mănânci un măr copt!",
+  "Ce bine că nu plouă!"
 ];
+
+function mesajFor(n){ return MESAJE[n % 10]; }
 
 var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var T = REDUCED
@@ -1374,7 +1375,7 @@ function renderDecades(){
     var dec = DECADES[d];
     html += '<div class="dec' + (counts[d] === 0 ? ' empty' : '') + '"' +
             ' style="--c:' + dec.c + ';--i:' + dec.i + '"' +
-            ' title="' + dec.from + ' to ' + dec.to + ': ' + counts[d] + ' left">' +
+            ' title="' + dec.from + '-' + dec.to + ': ' + counts[d] + ' rămase">' +
               '<span class="sw">' + counts[d] + '</span>' +
               '<span class="rg">' + dec.from + '–' + dec.to + '</span>' +
             '</div>';
@@ -1385,7 +1386,7 @@ function renderDecades(){
 
 function renderRecent(){
   if (!called.length){
-    recentEl.innerHTML = '<span class="none">No balls called yet</span>';
+    recentEl.innerHTML = '<span class="none">Nicio bilă extrasă încă</span>';
     return;
   }
   var html = '';
@@ -1413,17 +1414,17 @@ function renderBoard(){
     }
   }
   boardEl.innerHTML = h;
-  sheetCount.textContent = called.length + ' of ' + MAX;
+  sheetCount.textContent = called.length + ' din ' + MAX;
 
   if (!called.length){
-    ordEl.innerHTML = '<span class="none">Nothing called yet</span>';
+    ordEl.innerHTML = '<span class="none">Nimic extras încă</span>';
     return;
   }
   var o = '';
   for (i = called.length - 1; i >= 0; i--){
     var n = called[i], dc = DECADES[decOf(n)];
     o += '<b' + (i === called.length - 1 ? ' class="now"' : '') +
-         ' title="Ball ' + (i + 1) + '"' +
+         ' title="Bila ' + (i + 1) + '"' +
          ' style="--c:' + dc.c + ';--i:' + dc.i + '">' + n + '</b>';
   }
   ordEl.innerHTML = o;
@@ -1450,7 +1451,7 @@ function renderAll(){
   renderRecent();
   renderBoard();
   drawBtn.disabled = pool.length === 0;
-  drawBtn.textContent = pool.length === 0 ? 'All ' + MAX + ' called' : 'Draw ball';
+  drawBtn.textContent = pool.length === 0 ? 'Toate extrase' : 'Extrage bila';
 }
 
 /* ---------------- sound ---------------- */
@@ -1549,7 +1550,7 @@ function playReveal(d){
 
 function syncSound(){
   soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
-  soundBtn.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+  soundBtn.setAttribute('aria-label', soundOn ? 'Sunet pornit' : 'Sunet oprit');
 }
 
 soundBtn.addEventListener('click', function(e){
@@ -1721,9 +1722,9 @@ function openReveal(){
   rvBall.classList.toggle('one', n < 10);
   rvBall.classList.toggle('u', n === 6 || n === 9);
   rvRange.textContent = dec.from + ' – ' + dec.to;
-  rvCall.textContent = CALLS[n - 1];
-  rvIndex.textContent = 'Ball ' + called.length + ' of ' + MAX;
-  liveEl.textContent = 'Number ' + n + '. ' + CALLS[n - 1] + '. ' + dec.from + ' to ' + dec.to + '.';
+  rvCall.textContent = mesajFor(n);
+  rvIndex.textContent = 'Bila ' + called.length + ' din ' + MAX;
+  liveEl.textContent = 'Numărul ' + n + '. ' + mesajFor(n) + '. Grupa ' + dec.from + ' la ' + dec.to + '.';
 
   reveal.hidden = false;
   confettiStop();
@@ -1849,7 +1850,7 @@ var armTimer = 0;
 function disarm(){
   clearTimeout(armTimer);
   resetBtn.classList.remove('armed');
-  resetBtn.textContent = 'Reset';
+  resetBtn.textContent = 'Joc nou';
 }
 
 function doReset(){
@@ -1869,14 +1870,14 @@ function doReset(){
   pendingReveal = false;
   busy = false;
   renderAll();
-  liveEl.textContent = 'All ' + MAX + ' balls returned to the drum.';
+  liveEl.textContent = 'Toate cele ' + MAX + ' de bile au revenit în urnă.';
   wake();
 }
 
 resetBtn.addEventListener('click', function(){
   if (resetBtn.classList.contains('armed')){ doReset(); return; }
   resetBtn.classList.add('armed');
-  resetBtn.textContent = 'Reset all?';
+  resetBtn.textContent = 'Sigur?';
   armTimer = setTimeout(disarm, 3000);
 });
 

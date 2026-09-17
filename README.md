@@ -37,8 +37,13 @@ Ten balls per colour, each ringing one step further up a major pentatonic:
 | red | orange | gold | lime | emerald | cyan | azure | violet | magenta |
 | A4 | B4 | C♯5 | E5 | F♯5 | A5 | B5 | C♯6 | E6 |
 
-Each number is announced with its traditional call — *Two fat ladies*,
-*Clickety click*, *Top of the shop*. 6 and 9 are underlined, as on a real set.
+Romanian diacritics (ă â î ș ț) come from the Google Fonts `latin-ext`
+subsets of Archivo, Archivo Black and Fraunces — verified rendering from the
+webfonts rather than a fallback.
+
+The interface is in Romanian. Under each drawn number sits a line chosen by
+its **last digit**, so 7, 17, 27 … all share one: `MESAJE[n % 10]`, ten strings
+near the top of the file. 6 and 9 are underlined, as on a real set.
 
 ## Files
 
