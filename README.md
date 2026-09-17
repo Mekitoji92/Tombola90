@@ -7,9 +7,11 @@ pitched to its decade, and a burst of confetti that falls behind it.
 
 **Live:** https://mekitoji92.github.io/Tombola90/
 
-Drawn balls leave the pool. The game is kept in `localStorage`, so a refresh
-mid-session does not lose the calls. Reset (top right) asks once before
-returning all 90 to the drum.
+Drawn balls leave the pool. The grid button beside the called strip opens the
+full history: every number 1-90 laid out a decade per row, called ones lit in
+their colour, plus the sequence in call order. The game is kept in
+`localStorage`, so a refresh mid-session does not lose the calls. Reset (top
+right) asks once before returning all 90 to the drum.
 
 ## Colours
 
@@ -67,6 +69,13 @@ the generated file, so a source change that is not rebuilt will not ship.
   off a frame firing.
 - **`prefers-reduced-motion`** shortens the sequence and skips the confetti.
   The sound still plays.
+- **The drum uses position-based dynamics**: predict, solve contacts as pure
+  position constraints, then read velocity back off the positions the solver
+  allowed. A resting contact therefore yields zero velocity by construction,
+  which is what lets 90 balls come to rest. An impulse solver was tried first
+  and left balls overlapping by a quarter of their diameter, buzzing for ever.
+  If you retune it, check it headlessly rather than by eye - the ball speed cap
+  must stay under one ball-width per frame or contacts tunnel.
 
 ## Related
 

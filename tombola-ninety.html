@@ -236,6 +236,141 @@ button{font:inherit;color:inherit}
   box-shadow:0 0 0 2px rgba(255,255,255,.16), 0 5px 16px -5px var(--c);
 }
 
+/* ---------- called strip: history button ---------- */
+.strip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.hist{
+  flex:0 0 auto;
+  width:44px;height:44px;
+  display:grid;place-items:center;
+  padding:0;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  color:var(--muted);
+  cursor:pointer;
+  transition:color .18s,border-color .18s;
+}
+.hist:hover{color:var(--text);border-color:#2C3A4C}
+.hist svg{width:20px;height:20px;fill:currentColor}
+.strip .recent{flex:1 1 auto;min-width:0}
+
+/* ---------- history sheet ---------- */
+.sheet{
+  position:fixed;
+  inset:0;
+  z-index:40;
+  display:flex;
+  align-items:flex-end;
+  background:rgba(4,7,11,.72);
+}
+.sheet-card{
+  width:100%;
+  max-height:88vh;
+  overflow-y:auto;
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  border-radius:20px 20px 0 0;
+  padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  box-shadow:0 -24px 60px -20px rgba(0,0,0,.8);
+}
+.sheet-bar{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
+.sheet-title{
+  font-family:'Archivo Black',Impact,sans-serif;
+  font-size:15px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.sheet-count{
+  font-size:11px;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.sheet-bar .spacer{flex:1}
+.sheet-x{
+  height:30px;
+  padding:0 12px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.02);
+  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.sheet-x:hover{color:var(--text);border-color:#2C3A4C}
+
+/* One row per decade: the board doubles as the colour key. */
+.board{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:4px;
+}
+.cell{
+  aspect-ratio:1;
+  display:grid;
+  place-items:center;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+  color:var(--dim);
+  border:1px solid var(--line);
+  transition:background .2s,color .2s;
+}
+.cell.on{
+  background:var(--c);
+  color:var(--i);
+  border-color:transparent;
+  font-family:'Archivo Black',sans-serif;
+  font-weight:400;
+}
+.cell.now{box-shadow:0 0 0 2px rgba(255,255,255,.65)}
+.ord-label{
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:7px;
+}
+.ord{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.ord b{
+  font-family:'Archivo Black',sans-serif;
+  font-weight:400;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+  padding:3px 7px;
+  border-radius:7px;
+  color:var(--i);
+  background:var(--c);
+}
+.ord b.now{box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+.ord .none,.recent .none{
+  font-size:11px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+
 /* ---------- draw ---------- */
 .draw{
   width:100%;
@@ -417,8 +552,39 @@ button{font:inherit;color:inherit}
 
     <div class="panel">
       <div class="decades" id="decades"></div>
-      <div class="recent" id="recent"></div>
+      <div class="strip">
+        <button class="hist" id="histBtn" type="button" aria-label="Show every ball called">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <rect x="2" y="2" width="5" height="5" rx="1.4"/>
+            <rect x="7.5" y="2" width="5" height="5" rx="1.4"/>
+            <rect x="13" y="2" width="5" height="5" rx="1.4"/>
+            <rect x="2" y="7.5" width="5" height="5" rx="1.4"/>
+            <rect x="7.5" y="7.5" width="5" height="5" rx="1.4"/>
+            <rect x="13" y="7.5" width="5" height="5" rx="1.4"/>
+            <rect x="2" y="13" width="5" height="5" rx="1.4"/>
+            <rect x="7.5" y="13" width="5" height="5" rx="1.4"/>
+            <rect x="13" y="13" width="5" height="5" rx="1.4"/>
+          </svg>
+        </button>
+        <div class="recent" id="recent"></div>
+      </div>
       <button class="draw" id="drawBtn" type="button">Draw ball</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Every ball called">
+    <div class="sheet-bar">
+      <span class="sheet-title">Called</span>
+      <span class="sheet-count" id="sheetCount">0 of 90</span>
+      <span class="spacer"></span>
+      <button class="sheet-x" id="sheetX" type="button">Close</button>
+    </div>
+    <div class="board" id="board"></div>
+    <div>
+      <div class="ord-label">In call order, newest first</div>
+      <div class="ord" id="ord"></div>
     </div>
   </div>
 </div>
@@ -481,7 +647,7 @@ var CALLS = [
 var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var T = REDUCED
   ? {blow:220, eject:200, chute:280, pause:60}
-  : {blow:950, eject:560, chute:900, pause:180};
+  : {blow:1150, eject:560, chute:950, pause:180};
 
 /* ---------------- colour helpers ---------------- */
 function rgb(hex){
@@ -533,6 +699,12 @@ var rvIndex   = document.getElementById('rvIndex');
 var markEl    = document.getElementById('mark');
 var soundBtn  = document.getElementById('soundBtn');
 var confCv    = document.getElementById('confetti');
+var histBtn   = document.getElementById('histBtn');
+var sheet     = document.getElementById('sheet');
+var sheetX    = document.getElementById('sheetX');
+var sheetCount= document.getElementById('sheetCount');
+var boardEl   = document.getElementById('board');
+var ordEl     = document.getElementById('ord');
 var cctx      = confCv.getContext('2d');
 
 for (var m = 0; m < 9; m++){
@@ -640,6 +812,7 @@ var rafId = 0;
 var lastTs = 0;
 var seq = null;              // the running draw, timed off the wall clock
 var revealTimer = 0;
+var lastMove = 0;            // furthest any ball travelled last frame, in px
 
 function nowMs(){
   return (window.performance && performance.now) ? performance.now() : Date.now();
@@ -670,77 +843,70 @@ function clampBalls(){
   }
 }
 
+/* Position-based dynamics: predict, solve the contacts as pure position
+   constraints, then read velocity back off the positions the solver actually
+   allowed. A resting contact yields zero velocity by construction, which is
+   what lets a heap of 90 balls come to rest instead of shimmering for ever.
+   The older impulse solver left balls overlapping by a quarter of their
+   diameter and never stopped moving. */
 function physics(dt){
-  var G = R * 0.0036;
-  var i, b;
-  for (i = 0; i < balls.length; i++){
+  if (dt < 0.1) dt = 0.1;             // never divide velocity by ~0 below
+  var G = R * 0.0030;
+  var cap = R * 0.072;                // under one ball-width a frame: no blur, no tunnelling
+  var md = br * 2, md2 = md * md;
+  var max = R - br - 2;
+  var n = balls.length;
+  var i, j, b;
+
+  for (i = 0; i < n; i++){
     b = balls[i];
+    b.px = b.x; b.py = b.y;
     b.vy += G * dt;
-    b.vx *= Math.pow(0.992, dt);
-    b.vy *= Math.pow(0.996, dt);
+    b.vx *= Math.pow(0.99, dt);
+    b.vy *= Math.pow(0.995, dt);
     var sp = Math.hypot(b.vx, b.vy);
-    var cap = R * 0.13;
     if (sp > cap){ b.vx = b.vx / sp * cap; b.vy = b.vy / sp * cap; }
     b.x += b.vx * dt;
     b.y += b.vy * dt;
   }
 
-  var md = br * 2, md2 = md * md, n = balls.length;
-  for (var it = 0; it < 2; it++){
+  for (var it = 0; it < 8; it++){
     for (i = 0; i < n; i++){
       var a = balls[i];
-      for (var j = i + 1; j < n; j++){
+      for (j = i + 1; j < n; j++){
         var c = balls[j];
         var dx = c.x - a.x, dy = c.y - a.y;
-        var d2 = dx*dx + dy*dy;
-        if (d2 < md2 && d2 > 0.0001){
-          var d = Math.sqrt(d2);
-          var nx = dx / d, ny = dy / d;
-          var over = (md - d) * 0.5;
-          a.x -= nx * over; a.y -= ny * over;
-          c.x += nx * over; c.y += ny * over;
-          if (it === 0){
-            var vn = (c.vx - a.vx) * nx + (c.vy - a.vy) * ny;
-            if (vn < 0){
-              var imp = -(1.35) * vn * 0.5;
-              a.vx -= imp * nx; a.vy -= imp * ny;
-              c.vx += imp * nx; c.vy += imp * ny;
-            }
-          }
-        }
+        var d2 = dx * dx + dy * dy;
+        if (d2 >= md2 || d2 < 0.000001) continue;
+        var d = Math.sqrt(d2);
+        var k = (md - d) * 0.5 / d;
+        var ox = dx * k, oy = dy * k;
+        a.x -= ox; a.y -= oy;
+        c.x += ox; c.y += oy;
       }
     }
-    var max = R - br - 2;
     for (i = 0; i < n; i++){
       b = balls[i];
       var wx = b.x - cx, wy = b.y - cy;
-      var wd = Math.hypot(wx, wy) || 1;
+      var wd = Math.hypot(wx, wy);
       if (wd > max){
-        var ux = wx / wd, uy = wy / wd;
-        b.x = cx + ux * max; b.y = cy + uy * max;
-        var rv = b.vx * ux + b.vy * uy;
-        if (rv > 0){ b.vx -= 1.45 * rv * ux; b.vy -= 1.45 * rv * uy; }
-        b.vx *= 0.98; b.vy *= 0.98;
+        var w = max / wd;
+        b.x = cx + wx * w;
+        b.y = cy + wy * w;
       }
     }
   }
 
-  if (phase === 'idle'){
-    for (i = 0; i < n; i++){
-      b = balls[i];
-      b.vx *= 0.93; b.vy *= 0.985;
-      if (Math.abs(b.vx) < 0.02) b.vx = 0;
-    }
+  var mv = 0;
+  for (i = 0; i < n; i++){
+    b = balls[i];
+    var ax = b.x - b.px, ay = b.y - b.py;
+    b.vx = ax / dt;
+    b.vy = ay / dt;
+    var m = ax * ax + ay * ay;
+    if (m > mv) mv = m;
   }
-}
-
-function maxSpeed(){
-  var m = 0;
-  for (var i = 0; i < balls.length; i++){
-    var s = Math.abs(balls[i].vx) + Math.abs(balls[i].vy);
-    if (s > m) m = s;
-  }
-  return m;
+  lastMove = Math.sqrt(mv);   // furthest any ball actually travelled this frame
 }
 
 function detach(){
@@ -790,11 +956,11 @@ function step(dt, now){
     var floorY = cy + R;
     for (i = 0; i < balls.length; i++){
       b = balls[i];
-      if (Math.random() > 0.55) continue;
+      if (Math.random() > 0.45) continue;
       var jet = (1 - ((floorY - b.y) / (2 * R)) * 1.3) * power;
       if (jet <= 0) continue;
-      b.vy -= (R * 0.009 + Math.random() * R * 0.015) * jet * dt;
-      b.vx += (Math.random() - 0.5) * R * 0.022 * jet * dt;
+      b.vy -= (R * 0.010 + Math.random() * R * 0.017) * jet * dt;
+      b.vx += (Math.random() - 0.5) * R * 0.023 * jet * dt;
     }
   }
 
@@ -994,9 +1160,9 @@ function loop(ts){
   step(dt, nowMs());
   render();
 
-  if (!seq && phase === 'idle' && maxSpeed() < 0.14){
+  if (!seq && phase === 'idle' && lastMove < 0.35){
     sleepFrames++;
-    if (sleepFrames > 40){ lastTs = 0; render(); return; }
+    if (sleepFrames > 30){ lastTs = 0; render(); return; }
   } else {
     sleepFrames = 0;
   }
@@ -1052,9 +1218,54 @@ function renderRecent(){
   recentEl.scrollLeft = 0;
 }
 
+function renderBoard(){
+  var seen = {}, i, h = '';
+  for (i = 0; i < called.length; i++) seen[called[i]] = 1;
+  var last = called[called.length - 1];
+  for (var d = 0; d < 9; d++){
+    var dec = DECADES[d];
+    for (var k = dec.from; k <= dec.to; k++){
+      h += '<span class="cell' + (seen[k] ? ' on' : '') + (k === last ? ' now' : '') +
+           '" style="--c:' + dec.c + ';--i:' + dec.i + '">' + k + '</span>';
+    }
+  }
+  boardEl.innerHTML = h;
+  sheetCount.textContent = called.length + ' of 90';
+
+  if (!called.length){
+    ordEl.innerHTML = '<span class="none">Nothing called yet</span>';
+    return;
+  }
+  var o = '';
+  for (i = called.length - 1; i >= 0; i--){
+    var n = called[i], dc = DECADES[decOf(n)];
+    o += '<b' + (i === called.length - 1 ? ' class="now"' : '') +
+         ' title="Ball ' + (i + 1) + '"' +
+         ' style="--c:' + dc.c + ';--i:' + dc.i + '">' + n + '</b>';
+  }
+  ordEl.innerHTML = o;
+}
+
+function openSheet(){
+  renderBoard();
+  sheet.hidden = false;
+  sheetX.focus({preventScroll: true});
+}
+
+function closeSheet(){
+  if (sheet.hidden) return;
+  sheet.hidden = true;
+  histBtn.focus({preventScroll: true});
+}
+
+histBtn.addEventListener('click', openSheet);
+sheetX.addEventListener('click', closeSheet);
+sheet.addEventListener('click', function(e){ if (e.target === sheet) closeSheet(); });
+
 function renderAll(){
   renderDecades();
   renderRecent();
+  renderBoard();
   drawBtn.disabled = pool.length === 0;
   drawBtn.textContent = pool.length === 0 ? 'All 90 called' : 'Draw ball';
 }
@@ -1273,6 +1484,7 @@ var busy = false;
 
 function drawBall(){
   if (busy || !pool.length) return;
+  closeSheet();
   busy = true;
   drawBtn.disabled = true;
 
@@ -1431,9 +1643,15 @@ drawBtn.addEventListener('click', function(){ disarm(); audio(); drawBall(); });
 reveal.addEventListener('click', closeReveal);
 
 window.addEventListener('keydown', function(e){
-  if (e.key === 'Escape'){ if (!reveal.hidden) closeReveal(); else disarm(); return; }
+  if (e.key === 'Escape'){
+    if (!reveal.hidden) closeReveal();
+    else if (!sheet.hidden) closeSheet();
+    else disarm();
+    return;
+  }
   if (e.key === ' ' || e.key === 'Enter'){
     if (!reveal.hidden){ e.preventDefault(); closeReveal(); }
+    else if (!sheet.hidden){ /* let the sheet's own buttons handle it */ }
     else if (document.activeElement !== resetBtn && !busy){ e.preventDefault(); drawBall(); }
   }
 });
