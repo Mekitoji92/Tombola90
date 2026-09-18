@@ -801,7 +801,7 @@ function mesajFor(n){ return MESAJE[n % 10]; }
 var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var T = REDUCED
   ? {blow:220, eject:200, chute:320, pause:60}
-  : {blow:950, eject:600, chute:1900, pause:160};
+  : {blow:750, eject:480, chute:1150, pause:140};
 
 /* ---------------- colour helpers ---------------- */
 function rgb(hex){
@@ -886,6 +886,7 @@ var sR = 130, cupY = 0;          // spiral radius, and where the ball lands
 var spiralPts = [];
 var sprites = [];
 
+var TRAIL = REDUCED ? 0 : 3;     // ghost sprites streaked behind the ball
 var TURNS = 3;                   // orbits of the drum on the way down
 var TILT = 0.26;                 // how far above the coil the eye sits
 
@@ -1294,15 +1295,28 @@ function drawCup(){
 
 function drawTravelBall(front){
   if (phase !== 'chute' || !chosen) return;
-  var pt = travelAt(chuteT);
-  if ((pt.z >= 0) !== front) return;
-  var k = br * (1 + 0.22 * pt.z);     // nearer the viewer reads a touch bigger
-  ctx.save();
-  ctx.shadowColor = rgba(DECADES[chosen.d].c, 0.9);
-  ctx.shadowBlur = k * 2.2;
-  drawSprite(pt.x, pt.y, k, chosen.d);
-  ctx.restore();
-  chosen.sx = pt.x; chosen.sy = pt.y; chosen.sr = k;
+  var col = DECADES[chosen.d].c;
+  // At this speed a lone sprite lands two ball-widths from where it was and
+  // reads as strobing, so it trails a few fading ghosts into a streak. Each
+  // ghost is tested for depth on its own, so a trail crossing behind the drum
+  // is cut by the drum like the ball is.
+  for (var g = TRAIL; g >= 0; g--){
+    var tt = chuteT - g * 0.010;
+    if (tt < 0) continue;
+    var pt = travelAt(tt);
+    if ((pt.z >= 0) !== front) continue;
+    var k = br * (1 + 0.22 * pt.z) * (1 - g * 0.11);
+    ctx.save();
+    if (g){
+      ctx.globalAlpha = 0.5 - g * 0.11;
+    } else {
+      ctx.shadowColor = rgba(col, 0.9);
+      ctx.shadowBlur = k * 2.2;
+    }
+    drawSprite(pt.x, pt.y, k, chosen.d);
+    ctx.restore();
+    if (!g){ chosen.sx = pt.x; chosen.sy = pt.y; chosen.sr = k; }
+  }
 }
 
 function render(){
